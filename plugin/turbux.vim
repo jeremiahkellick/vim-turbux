@@ -100,6 +100,10 @@ function! s:test_file_for(file)
   if !empty(s:prefix_for_test(a:file))
     call s:add(candidates, a:file)
   endif
+  if a:file =~# 'lib/'
+    let l:test_file='spec/'.expand('%:t:r').'_spec.'.'rb'
+    call s:add(candidates, l:test_file)
+  endif
   return s:first_readable_file(candidates)
 endfunction
 
