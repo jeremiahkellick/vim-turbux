@@ -73,7 +73,11 @@ endfunction
 " Test running {{{1
 function! s:prefix_for_test(file)
   if a:file =~# '_spec.rb$'
-    return g:turbux_command_rspec
+    if s:fail_fast
+      return g:turbux_command_rspec.' --fail-fast'
+    else
+      return g:turbux_command_rspec
+    endif
   elseif a:file =~# '_spec.\(coffee\|js\)$'
     return g:turbux_command_teaspoon
   elseif a:file =~# '\(\<test_.*\|_test\)\.rb$'
@@ -262,8 +266,19 @@ function! SendTestToTmux(file) abort
   return s:send_test(executable)
 endfunction
 
+function! SendFailFastTestToTmux(file) abort
+  let s:fail_fast = 1
+  call SendTestToTmux(a:file)
+endfunction
+
+function! SendRegularTestToTmux(file) abort
+  let s:fail_fast = 0
+  call SendTestToTmux(a:file)
+endfunction
+
 function! SendFocusedTestToTmux(file, line) abort
   let focus = ":".a:line
+  let s:fail_fast = 0
 
   if s:prefix_for_test(a:file) == g:turbux_command_test_unit && g:turbux_test_type != 'minitest'
     let quoted_test_name = s:find_unit_test_name_in_quotes()
@@ -300,11 +315,13 @@ endfunction
 " }}}1
 
 " Mappings {{{1
-nnoremap <silent> <Plug>SendTestToTmux :<C-U>w \| call SendTestToTmux(expand('%'))<CR>
+nnoremap <silent> <Plug>SendRegularTestToTmux :<C-U>w \| call SendRegularTestToTmux(expand('%'))<CR>
+nnoremap <silent> <Plug>SendFailFastTestToTmux :<C-U>w \| call SendFailFastTestToTmux(expand('%'))<CR>
 nnoremap <silent> <Plug>SendFocusedTestToTmux :<C-U>w \| call SendFocusedTestToTmux(expand('%'), line('.'))<CR>
 
 if !exists("g:no_turbux_mappings")
-  nmap <leader>t <Plug>SendTestToTmux
+  nmap <leader>t <Plug>SendRegularTestToTmux
+  nmap <leader>f <Plug>SendFailFastTestToTmux
   nmap <leader>T <Plug>SendFocusedTestToTmux
 endif
 "}}}1
